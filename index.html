@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe Game</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .cell {
+            transition: all 0.3s ease;
+        }
+        .cell:hover {
+            background-color: #e2e8f0;
+        }
+        .winner-cell {
+            background-color: #4ade80 !important;
+            color: white !important;
+        }
+        @media (max-width: 640px) {
+            .game-board {
+                grid-template-columns: repeat(3, 80px);
+                grid-template-rows: repeat(3, 80px);
+            }
+            .cell {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-r from-cyan-500 to-blue-500 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center text-white mb-8">Tic Tac Toe</h1>
+        
+        <div class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6">
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="text-lg font-semibold">
+                        <span id="player1" class="text-blue-600">Player X: <span id="score1">0</span></span>
+                    </div>
+                    <div class="text-lg font-semibold">
+                        <span id="player2" class="text-red-600">Player O: <span id="score2">0</span></span>
+                    </div>
+                </div>
+                
+                <div class="game-board grid grid-cols-3 gap-2 mb-6" style="grid-template-columns: repeat(3, 100px); grid-template-rows: repeat(3, 100px);">
+                    <div class="cell bg-gray-100 flex items-center justify-center text-4xl font-bold rounded cursor-pointer"></div>
+                    <div class="cell bg-gray-100 flex items-center justify-center text-4xl font-bold rounded cursor-pointer"></div>
+                    <div class="cell bg-gray-100 flex items-center justify-center text-4xl font-bold rounded cursor-pointer"></div>
+                    <div class="cell bg-gray-100 flex items-center justify-center text-4xl font-bold rounded cursor-pointer"></div>
+                    <div class="cell bg-gray-100 flex items-center justify-center text-4xl font-bold rounded cursor-pointer"></div>
+                    <div class="cell bg-gray-100 flex items-center justify-center text-4xl font-bold rounded cursor-pointer"></div>
+                    <div class="cell bg-gray-100 flex items-center justify-center text-4xl font-bold rounded cursor-pointer"></div>
+                    <div class="cell bg-gray-100 flex items-center justify-center text-4xl font-bold rounded cursor-pointer"></div>
+                    <div class="cell bg-gray-100 flex items-center justify-center text-4xl font-bold rounded cursor-pointer"></div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col space-y-3">
+                <button id="vsComputer" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition">
+                    Play vs Computer
+                </button>
+                <button id="vsPlayer" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition">
+                    Play vs Friend
+                </button>
+                <button id="resetGame" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition">
+                    Reset Game
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPlayer = 'X';
+        let gameBoard = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = false;
+        let vsCompMode = false;
+        let scores = {X: 0, O: 0};
+        const winCombos = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        const cells = document.querySelectorAll('.cell');
+        const vsComputerBtn = document.getElementById('vsComputer');
+        const vsPlayerBtn = document.getElementById('vsPlayer');
+        const resetBtn = document.getElementById('resetGame');
+
+        function startGame(vsComp) {
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            vsCompMode = vsComp;
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('winner-cell');
+            });
+            updateDisplay();
+        }
+
+        function makeMove(index) {
+            if (gameBoard[index] === '' && gameActive) {
+                gameBoard[index] = currentPlayer;
+                cells[index].textContent = currentPlayer;
+                cells[index].style.color = currentPlayer === 'X' ? '#2563eb' : '#dc2626';
+
+                if (checkWin()) {
+                    handleWin();
+                } else if (gameBoard.every(cell => cell !== '')) {
+                    handleDraw();
+                } else {
+                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                    updateDisplay();
+                    if (vsCompMode && currentPlayer === 'O') {
+                        setTimeout(computerMove, 500);
+                    }
+                }
+            }
+        }
+
+        function computerMove() {
+            if (!gameActive) return;
+            
+            // Try to win
+            for (let i = 0; i < gameBoard.length; i++) {
+                if (gameBoard[i] === '') {
+                    gameBoard[i] = 'O';
+                    if (checkWin()) {
+                        makeMove(i);
+                        return;
+                    }
+                    gameBoard[i] = '';
+                }
+            }
+
+            // Block player
+            for (let i = 0; i < gameBoard.length; i++) {
+                if (gameBoard[i] === '') {
+                    gameBoard[i] = 'X';
+                    if (checkWin()) {
+                        gameBoard[i] = '';
+                        makeMove(i);
+                        return;
+                    }
+                    gameBoard[i] = '';
+                }
+            }
+
+            // Take center
+            if (gameBoard[4] === '') {
+                makeMove(4);
+                return;
+            }
+
+            // Take random available spot
+            const emptySpots = gameBoard.reduce((acc, val, idx) => 
+                val === '' ? [...acc, idx] : acc, []);
+            if (emptySpots.length > 0) {
+                const randomIndex = emptySpots[Math.floor(Math.random() * emptySpots.length)];
+                makeMove(randomIndex);
+            }
+        }
+
+        function checkWin() {
+            return winCombos.some(combo => {
+                const [a, b, c] = combo;
+                return gameBoard[a] && 
+                       gameBoard[a] === gameBoard[b] && 
+                       gameBoard[a] === gameBoard[c];
+            });
+        }
+
+        function handleWin() {
+            gameActive = false;
+            scores[currentPlayer]++;
+            document.getElementById(`score${currentPlayer === 'X' ? '1' : '2'}`).textContent = scores[currentPlayer];
+            
+            winCombos.forEach(combo => {
+                if (gameBoard[combo[0]] === currentPlayer && 
+                    gameBoard[combo[1]] === currentPlayer && 
+                    gameBoard[combo[2]] === currentPlayer) {
+                    combo.forEach(index => cells[index].classList.add('winner-cell'));
+                }
+            });
+        }
+
+        function handleDraw() {
+            gameActive = false;
+        }
+
+        function updateDisplay() {
+            document.getElementById('player1').style.textDecoration = currentPlayer === 'X' ? 'underline' : 'none';
+            document.getElementById('player2').style.textDecoration = currentPlayer === 'O' ? 'underline' : 'none';
+        }
+
+        cells.forEach((cell, index) => {
+            cell.addEventListener('click', () => makeMove(index));
+        });
+
+        vsComputerBtn.addEventListener('click', () => startGame(true));
+        vsPlayerBtn.addEventListener('click', () => startGame(false));
+        resetBtn.addEventListener('click', () => {
+            scores = {X: 0, O: 0};
+            document.getElementById('score1').textContent = '0';
+            document.getElementById('score2').textContent = '0';
+            startGame(vsCompMode);
+        });
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
